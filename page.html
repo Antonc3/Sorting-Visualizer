@@ -1,0 +1,532 @@
+<html>
+  <div class="container">
+    <div class="container">
+      <div class="dropdown">
+        <button id="sort-type" onclick="showDropdown()" class="dropbtn">
+          Selection Sort
+        </button>
+        <div id="select-sort" class="dropdown-content">
+          <a href="#" id="selection" onclick="changeSort('selection')">Selection Sort</a>
+          <a href="#" id="bubble" onclick="changeSort('bubble')">Bubble Sort</a>
+          <a href="#" id="insertion" onclick="changeSort('insertion')">Insertion Sort</a>
+          <a href="#" id="quick" onclick="changeSort('quick')">Quicksort</a>
+          <a href="#" id="merge" onclick="changeSort('merge')">Mergesort</a>
+          <a href="#" id="heap" onclick="changeSort('heap')">Heapsort</a>
+        </div>
+      </div>
+      <button id="toggle-sort" onclick="toggleSort()">Start Sorting!</button>
+      <button id="Generate Random Array" onclick="randomizeArray()">Generate Random Array</button>
+    </div>
+    <div class="container right">
+      <div class="container label-bottom">
+        <input type="range" min="1" max="800" value="100" class="slider" id="numberOfElements" name="numberOfElements" />
+        <label id="noe-label" for="numberOfElements">Number of Elements: 100</label>
+      </div>
+      <div class="container label-bottom">
+        <input type="range" min="1" max="200" value="100" class="slider" id="actionsPerSecond" name="actionsPerSecond" />
+        <label id="aps-label" for="actionsPerSecond">Actions Per Second: 100</label>
+      </div>
+    </div>
+  </div>
+</html>
+<link href="style.css" rel="stylesheet"/>
+<script>
+const DEBUG = true;
+var toggle = document.getElementById("toggle-sort");
+
+const actionsPerSecondSlider = document.getElementById("actionsPerSecond");
+const numberOfElementsSlider = document.getElementById("numberOfElements");
+
+let initialAPS = 200;
+let initialNOE = 100;
+
+let screenWidth = 1600;
+let screenHeight = 1200;
+
+let onPageLoad = () => {
+  actionsPerSecondSlider.value = initialAPS;
+  numberOfElementsSlider.value = initialNOE;
+  document.getElementById("aps-label").innerHTML = "Actions Per Second: " + initialAPS;
+  document.getElementById("noe-label").innerHTML = "Number of Elements: " + initialNOE;
+}
+
+onPageLoad();
+
+
+let qsHelper = (array, low, high) => {
+  if(low >= high) return;
+  let pivot = array[high];
+  let j = low-1;
+  for(let i = low; i < high; i++){
+    if(array[i] < array[high]){
+      let tmp = array[i];
+      array[i] = array[++j];
+      array[j] = tmp;
+    }
+  }
+  let tmp = array[j+1];
+  array[j+1] = array[high];
+  array[high] = tmp;
+  qsHelper(array, low, j);
+  qsHelper(array, j+2, high);
+}
+
+let qs = (array) => {
+  qsHelper(array, 0, array.length-1); 
+}
+
+const updateArray = (arr, numberOfElements) => {
+  qs(array);
+  while(arr.length > numberOfElements) arr.pop();
+  while(arr.length < numberOfElements) arr.push(arr.length+1);
+}
+
+function showDropdown() {
+  document.getElementById("select-sort").classList.toggle("show");
+}
+function changeSort(sortType){
+  console.log(sortType);
+  sorter.setSortType(sortType)
+  document.getElementById("sort-type").innerHTML = document.getElementById(sortType).innerHTML;
+}
+const sorterState = {
+  Stopped: 0,
+  Sorting: 1,
+  Paused: 2,
+  Finished: 3
+}
+function toggleSort(){
+  //start pause  
+  if(sorter.state == sorterState.Stopped){
+    toggle.innerHTML = "Pause Sorting";
+    sorter.state = sorterState.Sorting;
+    sorter.sort();
+  }
+  else if(sorter.state == sorterState.Sorting){
+    toggle.innerHTML = "Continue Sorting";
+    sorter.state = sorterState.Paused; 
+  }
+  else if(sorter.state == sorterState.Paused){
+    toggle.innerHTML = "Pause Sorting";
+    sorter.state = sorterState.Sorting;
+  }
+  else if(sorter.state == sorterState.Finished){
+    toggle.innerHTML  = "Start Sorting";
+    sorter.state = sorterState.Stopped;
+  }
+}
+
+function randomizeArray(){
+  sorter.setArray(shuffle(sorter.array));
+  sorter.setup();
+  var toggle = document.getElementById("toggle-sort");
+  if(sorter.state != sorterState.Stopped || sorter.state != sorterState.Finished){
+    sorter.state = sorterState.Stopped;
+    toggle.innerHTML = "Start Sorting";
+  }
+}
+
+actionsPerSecondSlider.oninput = () => {
+  sorter.actionsPerSecond = actionsPerSecondSlider.value;
+  document.getElementById("aps-label").innerHTML = "Actions Per Second: " + actionsPerSecondSlider.value;
+}
+numberOfElementsSlider.oninput = () => {
+  updateArray(array,numberOfElementsSlider.value);
+  document.getElementById("noe-label").innerHTML = "Number of Elements: " + numberOfElementsSlider.value;
+  sorter.setArray(array);
+  sorter.setup();
+  sorter.state = sorterState.Stopped;
+}
+
+// Close the dropdown menu if the user clicks outside of it
+window.onclick = function(event) {
+  if (!event.target.matches('.dropbtn')) {
+    var dropdowns = document.getElementsByClassName("dropdown-content");
+    var i;
+    for (i = 0; i < dropdowns.length; i++) {
+      var openDropdown = dropdowns[i];
+      if (openDropdown.classList.contains('show')) {
+        openDropdown.classList.remove('show');
+      }
+    }
+  }
+}
+const sleep = ms => new Promise(r => setTimeout(r,ms));
+class Canvas {
+   constructor(w, h) {
+    [this.width, this.height] = [w, h];
+    this.canvas = document.createElement("canvas");
+    this.canvas.width = this.width,
+    this.canvas.height = this.height;
+
+    document.querySelector('body').append(this.canvas);
+    this.ctx = this.canvas.getContext('2d');
+    this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
+    this.data = this.imageData.data;
+  }
+  setPixel(x, y, r, g, b, a) {
+    let index = 4 * (y * this.width, + x);
+    [this.data[index+0], this.data[index + 1], this.data[index + 2], this.data[index + 3]] = [r, g, b, a];
+  }
+  drawRect(x,y,width,height,rgba,outline=[255,255,255,0]){
+    let [r,g,b,a] = rgba;
+    let [or,og,ob,oa] = outline;
+    for(let i = x; i < x+width; i++){
+      for(let j = y; j < y+height; j++){
+        let index = 4 * (j * this.width + i);
+        if(i == x || i == x+width-1 || j == y || j==y+height-1){
+          [this.data[index+0], this.data[index + 1], this.data[index + 2], this.data[index + 3]] = [r, g, b, a];
+          continue;
+        }
+        [this.data[index+0], this.data[index + 1], this.data[index + 2], this.data[index + 3]] = [r, g, b, a];
+      }
+    }
+  }
+  setPixels() {
+    this.ctx.putImageData(this.imageData, 0, 0);
+  }
+}
+
+class SortVisualizerRect extends Canvas{
+  constructor(width,height,actionsPerSecond,array){
+    super(width,height);
+    this.actionsPerSecond = actionsPerSecond;
+    this.array = array;    
+    this.rectWidth = Math.floor(width/array.length);
+    this.rectHeight = Math.floor(height/array.length);
+    this.actionColor = [0,255,0,255];
+    this.idleColor = [134,206,235,255];
+    this.backgroundColor = [255,255,255,255];
+    this.sortType = "selection";
+    this.state = sorterState.Stopped;
+    this.setup();
+  }
+
+
+  setActionColor(rgba){
+    this.actionColor = rgba;
+  } 
+  setActionsPerSecond(aps){
+    this.actionsPerSecond = aps;
+  }
+  setArray(array){
+    this.array = array;
+    this.rectWidth = Math.floor(this.width/this.array.length);
+    this.rectHeight = Math.floor(this.height/this.array.length);
+  }
+
+  setSortType(sortType){
+    this.sortType = sortType;
+    this.state = sorterState.Stopped;
+  }
+  rectAtIndex(index, rgba,newVal=this.array[index]){
+    let x = this.rectWidth*index+Math.floor((this.width-this.rectWidth*this.array.length)*(index/this.array.length));
+    let width = this.rectWidth*(index+1)+Math.floor((this.width-this.rectWidth*this.array.length)*((index+1)/this.array.length))-x;
+    let leftover = this.height-this.rectHeight*this.array.length;
+    let height = this.rectHeight*newVal+Math.floor(leftover*(newVal)/this.array.length);
+    let y = this.height-height;
+    if(DEBUG) console.log(x,y,width,height);  
+    this.drawRect(x,y,width,height,rgba,rgba); 
+    //rectWidth * index + leftover
+    //leftover = this.width-rectWidth*array.length
+    //multiply that by index/array.length
+    //then floor the whole thing
+    //to get starting x
+  }
+  setup(){ 
+    this.drawRect(0,0,this.width,this.height,[255,255,255]); 
+    for(let i = 0; i < this.array.length; i++){
+      let x = i*(this.rectWidth);
+      let y = this.height-this.array[i]*this.rectWidth; 
+      this.rectAtIndex(i,this.idleColor);
+    }
+    this.setPixels();
+  }
+
+  async checkState(){
+    if(sorter.state == sorterState.Paused){
+      while(sorter.state == sorterState.Paused){
+        await sleep(100);
+      }
+      return await this.checkState();
+    }
+    else if(sorter.state == sorterState.Sorting){
+      return true;
+    }
+    else if (sorter.state == sorterState.Finished){
+      return false;
+    }
+    else if(sorter.state == sorterState.Stopped){
+      return false;
+    }
+  } 
+  
+  async sort(){
+    this.setup();
+    let result = false;
+    if(this.sortType=="selection"){
+      result = await this.selectionSort();
+    }
+    else if(this.sortType=="quick"){
+      result = await this.quicksort();
+    }
+    else if(this.sortType=="bubble"){
+      result = await this.bubbleSort();
+    }
+    else if(this.sortType=='insertion'){
+      result = await this.insertionSort();
+    }
+    else if(this.sortType=='merge'){
+      result = await this.mergeSort();
+    }
+    else if(this.sortType=='heap'){
+      result = await this.heapSort();
+    }
+    if(result){
+      if(DEBUG) console.log("Finished sorting!");
+      this.state = sorterState.Finished;
+    }
+    else{
+      if(DEBUG) console.log("Stopped for some other reason");
+      this.state = sorterState.Stopped;
+      toggle.innerHTML = "Start Sorting";
+    }
+  }
+  async swap(i, j){
+    if(!(await this.checkState())) return false;
+    if(i==j) return true;
+    if(i < 0 || i >= this.array.length || j < 0 || j >= this.array.length){
+      if(DEBUG) console.log("INDICES BAD",i,j);
+      return false;
+    }
+    this.rectAtIndex(i,this.actionColor);
+    this.rectAtIndex(j,this.actionColor);
+    this.setPixels();
+    await sleep(1000/this.actionsPerSecond);
+    if(!(await this.checkState())) return false;
+
+    this.rectAtIndex(i,this.backgroundColor);
+    this.rectAtIndex(j,this.backgroundColor);
+    let tmp = this.array[i];
+    this.array[i] = this.array[j];
+    this.array[j] = tmp;
+    
+    this.rectAtIndex(i,this.actionColor);
+    this.rectAtIndex(j,this.actionColor);
+    this.setPixels();
+    await sleep(1000/this.actionsPerSecond);
+    if(!(await this.checkState())) return false;
+
+    this.rectAtIndex(i,this.idleColor);
+    this.rectAtIndex(j,this.idleColor);
+    return true;
+  }
+
+  async highlight(indices){
+    if(!(await this.checkState())) return false;
+    indices.forEach(i => {
+      if(i < 0 || i >= this.array.length){
+        if(DEBUG) console.log("ur indices are shit")
+        return false;
+      }
+    })
+    indices.forEach(i => {this.rectAtIndex(i,this.actionColor)});
+    this.setPixels();
+    await sleep(1000/this.actionsPerSecond);
+    if(!(await this.checkState())) return false;
+    indices.forEach(i => {this.rectAtIndex(i,this.idleColor)});
+    return true;
+  }
+
+  async quicksort(){
+    return await this.quicksortHelper(0, array.length-1)
+  }
+
+  async quicksortHelper(low,high){
+    if(low >= high) return true;
+    let pivot = this.array[high];
+    let j = low-1;
+    for(let i = low; i <= high-1; i++){
+      if(!(await this.highlight([i,high]))) return false;
+      if(this.array[i] < pivot){
+        if(!(await this.swap(i,++j))) return false;
+      }
+    }
+    if((j+1 != high) && !(await this.swap(j+1,high))) return false;
+    return await this.quicksortHelper(low,j) && await this.quicksortHelper(j+2,high);
+  }
+
+  async selectionSort(){
+    for(let i = 0; i < this.array.length; i++){
+      let minval = i;
+      for(let j = i+1; j < this.array.length; j++){
+        if(!(await this.highlight([minval,j]))) return false;
+        if(this.array[minval] > this.array[j]){
+          minval = j;
+        }
+      }
+      if(!(await this.swap(i,minval))) return false;
+    }
+    return true;
+ }
+ async bubbleSort(){
+  for(let i = 0; i < this.array.length; i++){
+    for(let j = 1; j < this.array.length; j++){
+      if(this.array[j-1] > this.array[j]){
+        if(!(await this.swap(j-1,j))) return false;
+      }
+    }
+  }
+  return true;
+ }
+ async insertionSort(){
+  for(let i = 0; i < this.array.length; i++){
+    for(let j = i+1; j >= 0; j--){
+      if(this.array[j] < this.array[j-1]){
+        if(!(await this.swap(j-1,j))) return false;
+      }
+      else{
+        if(!(await this.highlight([j-1,j]))) return false;
+        //continue;
+      }
+    }
+  }
+  return true;
+ }
+
+ async replace(oldIndex, newHeight){
+    if(!(await this.checkState())) return false;
+    this.rectAtIndex(oldIndex,this.backgroundColor);
+    this.rectAtIndex(oldIndex,this.actionColor,newHeight);
+    this.setPixels();
+    await sleep(1000/this.actionsPerSecond);
+    if(!(await this.checkState())) return false;
+
+    this.rectAtIndex(oldIndex,this.idleColor,newHeight);
+    return true;
+ }
+
+ async mergeSort(){
+  return await this.mergeSortHelper(0, this.array.length-1);
+ }
+ async mergeSortHelper(low, high){
+  if(high-low <= 0) return true;
+  let mid = Math.floor((low+high)/2)
+  if(!(await this.mergeSortHelper(low,mid) && await this.mergeSortHelper(mid+1,high))) {
+    return false;
+  }
+  let leftArr = [];
+  let rightArr = [];
+  for(let i = low; i <= mid; i++){
+    leftArr.push(this.array[i]);
+  } 
+  for(let i = mid+1; i <= high; i++){
+    rightArr.push(this.array[i]);
+  } 
+  let l = 0;
+  let r = 0;
+  while(l < leftArr.length || r < rightArr.length){
+    let curIndex = low+l+r;
+    if(r>=rightArr.length || (l < leftArr.length && leftArr[l] < rightArr[r])){
+      if(!(await this.replace(curIndex,leftArr[l]))) return false
+      this.array[curIndex] = leftArr[l]; 
+      l++;
+    }
+    else{
+      if(!(await this.replace(curIndex,rightArr[r]))) return false;
+      this.array[curIndex] = rightArr[r]; 
+      r++;
+    }
+  }
+  return true;
+ }
+ async heapSort(){
+  //heapify array first
+  for(let i = Math.floor((this.array.length)/2); i >= 0; i--){
+    let it = i;
+    while(it*2+1 < this.array.length){
+      if(it*2+2<this.array.length){
+        if(!(await this.highlight([it,it*2+1,it*2+2]))) return false;
+        if(this.array[it] > this.array[it*2+1] && this.array[it] > this.array[it*2+2]){
+          break;
+        }
+        else if(this.array[it*2+1] > this.array[it] && this.array[it*2+1] > this.array[it*2+2]){
+          if(!(await this.swap(it,it*2+1))) return false;
+          it=it*2+1;
+        }
+        else{
+          if(!(await this.swap(it,it*2+2))) return false;
+          it = it*2+2;
+        }
+      }
+      else{
+        if(this.array[it] < this.array[it*2+1]){
+          if(!(await this.swap(it,it*2+1))) return false;
+          it = it*2+1;
+        }
+        else{
+          if(!(await this.highlight([it,it*2+1])))return false;
+          break;
+        }
+      }
+    }
+  }
+  for(let i = this.array.length-1; i > 0; i--){
+    if(!(await this.swap(0,i))) return false;
+    let it = 0;
+    while(it*2+1 < i){
+      let curmax = it;
+      if(it*2+2<i){
+        if(!(await this.highlight([it,it*2+1,it*2+2]))) return false;
+        if(this.array[it] > this.array[it*2+1] && this.array[it] > this.array[it*2+2]){
+          break;
+        }
+        else if(this.array[it*2+1] > this.array[it] && this.array[it*2+1] > this.array[it*2+2]){
+          if(!(await this.swap(it,it*2+1))) return false;
+          it=it*2+1;
+        }
+        else{
+          if(!(await this.swap(it,it*2+2))) return false;
+          it = it*2+2;
+        }
+      }
+      else{
+        if(this.array[it] < this.array[it*2+1]){
+          if(!(await this.swap(it,it*2+1))) return false;
+          it = it*2+1;
+        }
+        else{
+          if(!(await this.highlight([it,it*2+1]))) return false;
+          break;
+        }
+      }
+    }
+  }
+  return true;
+ }
+
+
+}
+function shuffle(array) {
+  let currentIndex = array.length,  randomIndex;
+
+  // While there remain elements to shuffle.
+  while (currentIndex != 0) {
+
+    // Pick a remaining element.
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+    array[randomIndex], array[currentIndex]];
+  }
+
+  return array;
+} 
+array = [];
+for(let i = 1; i <= initialNOE; i++){
+  array.push(i);
+}
+let sorter = new SortVisualizerRect(screenWidth,screenHeight,initialAPS,array);
+</script>
